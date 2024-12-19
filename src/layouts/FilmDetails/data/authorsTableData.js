@@ -153,41 +153,6 @@ export default function data() {
         Time: <DateTime time="11/12/2024" />,
         Method: <Method></Method>,
       },
-      {
-        ItemName: <FolderName image={team2} name="John Michael.png" />,
-        Time: <DateTime time="11/12/2024" />,
-        Method: <Method></Method>,
-      },
-      {
-        ItemName: <FolderName image={team2} name="John Michael.png" />,
-        Time: <DateTime time="11/12/2024" />,
-        Method: <Method></Method>,
-      },
-      {
-        ItemName: <FolderName image={team2} name="John Michael.png" />,
-        Time: <DateTime time="11/12/2024" />,
-        Method: <Method></Method>,
-      },
-      {
-        ItemName: <FolderName image={team2} name="John Michael.png" />,
-        Time: <DateTime time="11/12/2024" />,
-        Method: <Method></Method>,
-      },
-      {
-        ItemName: <FolderName image={team2} name="John Michael.png" />,
-        Time: <DateTime time="11/12/2024" />,
-        Method: <Method></Method>,
-      },
-      {
-        ItemName: <FolderName image={team2} name="John Michael.png" />,
-        Time: <DateTime time="11/12/2024" />,
-        Method: <Method></Method>,
-      },
-      {
-        ItemName: <FolderName image={team2} name="John Michael.png" />,
-        Time: <DateTime time="11/12/2024" />,
-        Method: <Method></Method>,
-      },
     ],
   };
 }

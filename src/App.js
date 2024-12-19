@@ -67,29 +67,27 @@ export default function App() {
   }, [pathname]);
 
   const getRoutes = (allRoutes) =>
-    allRoutes
-      .filter((route) => !route.hidden)
-      .map((route) => {
-        if (route.collapse) {
-          return getRoutes(route.collapse);
-        }
-        if (route.subRoutes) {
-          return (
-            <>
-              {route.subRoutes
-                .filter((route) => !route.hidden)
-                .map((sub) => (
-                  <Route exact path={sub.route} element={sub.component} key={sub.key} />
-                ))}
-              <Route exact path={route.route} element={route.component} key={route.key} />
-            </>
-          );
-        }
-        if (route.route) {
-          return <Route exact path={route.route} element={route.component} key={route.key} />;
-        }
-        return null;
-      });
+    allRoutes.map((route) => {
+      if (route.collapse) {
+        return getRoutes(route.collapse);
+      }
+      if (route.subRoutes) {
+        return (
+          <>
+            {route.subRoutes
+              .filter((route) => !route.hidden)
+              .map((sub) => (
+                <Route exact path={sub.route} element={sub.component} key={sub.key} />
+              ))}
+            <Route exact path={route.route} element={route.component} key={route.key} />
+          </>
+        );
+      }
+      if (route.route) {
+        return <Route exact path={route.route} element={route.component} key={route.key} />;
+      }
+      return null;
+    });
 
   const configsButton = (
     <MDBox
@@ -134,7 +132,7 @@ export default function App() {
       {layout === "vr" && <Configurator />}
       <Routes>
         {getRoutes(routes)}
-        <Route path="*" element={<Navigate to="/dashboard" />} />
+        <Route path="*" element={<Navigate to="/quan-ly-phim" />} />
       </Routes>
     </ThemeProvider>
   );

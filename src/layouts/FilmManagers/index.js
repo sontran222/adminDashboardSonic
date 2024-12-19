@@ -1,7 +1,8 @@
 // @mui material components
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
@@ -10,39 +11,153 @@ import MDTypography from "components/MDTypography";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 
-import DataTable from "examples/Tables/DataTable";
-
 // Data
-import authorsTableData from "layouts/FilmManagers/data/authorsTableData";
-import Breadcrumbs from "ultis/Breadcrumbs";
 import { Box, Button } from "@mui/material";
-//Icon
-import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
-import DeleteIcon from "@mui/icons-material/Delete";
-import AddIcon from "@mui/icons-material/Add";
 
 //ultis
-import CustomModal from "ultis/CustomModal";
-import CustomConfirm from "ultis/CustomConfirm";
+import { Table } from "antd";
+import axios from "axios";
+import CustomeDeleteModal from "ultis/CustomDeleteModal";
 
 function Tables() {
-  const { columns, rows } = authorsTableData();
-  const [modalState, setModalState] = useState({
-    modal1: false,
-    modal2: false,
-    modal3: false,
+  const [isLoading, setIsLoading] = useState(true);
+  const [data, setData] = useState([]);
+  const [isOpen, setOpen] = useState(false);
+  const [deleteInfo, setDeleteInfo] = useState({
+    id: "",
+    name: "",
   });
+  const navigate = useNavigate();
 
-  const handleOpen = (modalName) => {
-    setModalState({ ...modalState, [modalName]: true });
+  useEffect(() => {
+    const handleGetData = async () => {
+      try {
+        const response = await axios.get("http://localhost:8080/api/films");
+        console.log(response.data);
+
+        const filterData = response.data.result.map((item, index) => {
+          return {
+            index: index + 1,
+            id: item.id,
+            name: item.name,
+            timeModified: item.timeModified,
+            slug: item.slug,
+          };
+        });
+
+        setData(filterData);
+      } catch (error) {
+        console.log("Lỗi: ", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    handleGetData();
+  }, []);
+
+  const reloadData = async () => {
+    try {
+      const response = await axios.get("http://localhost:8080/api/films");
+      const filterData = response.data.result.map((item, index) => {
+        return {
+          index: index + 1,
+          id: item.id,
+          name: item.name,
+          timeModified: item.timeModified,
+          slug: item.slug,
+        };
+      });
+      setData(filterData); // Cập nhật lại dữ liệu
+    } catch (error) {
+      console.log("Lỗi khi tải lại dữ liệu:", error);
+    }
   };
-  const handleClose = (modalName, value) => {
-    setModalState({ ...modalState, [modalName]: value });
+  const handleDetail = (record) => {
+    navigate(`/quan-ly-phim/chi-tiet/${record.slug}`, { state: { slug: record.slug } });
+    console.log(record.slug);
   };
 
-  return (
+  const handleDelete = (record) => {
+    setDeleteInfo({ id: record.id, name: "phim " + record.name });
+    setOpen(true);
+  };
+
+  const handleClosePopup = () => {
+    setOpen(false);
+  };
+
+  const columns = [
+    {
+      title: "#",
+      dataIndex: "index",
+      rowScope: "row",
+    },
+    {
+      title: "Tên phim",
+      dataIndex: "name",
+    },
+    {
+      title: "Sửa đổi lần cuối",
+      dataIndex: "timeModified",
+      align: "center",
+    },
+    {
+      title: "Chức năng",
+      colSpan: 2,
+      dataIndex: "method",
+      align: "center",
+      render: (_, record) => (
+        <Button
+          variant="contained"
+          color="info"
+          sx={{
+            background: "#FF9900",
+            color: "#FFFFFF",
+            "&:hover": {
+              color: "#FF9900",
+            },
+          }}
+          onClick={() => handleDetail(record)}
+        >
+          Chi tiết
+        </Button>
+      ),
+    },
+    {
+      title: "Chức năng",
+      colSpan: 0, //Bỏ tiêu, đề ghép 2 cột thành 1
+      dataIndex: "method",
+      align: "center",
+      render: (_, record) => (
+        <Button
+          variant="contained"
+          color="error"
+          sx={{
+            background: "#FF0000",
+            color: "#FFFFFF",
+            "&:hover": {
+              color: "#FF0000",
+            },
+          }}
+          onClick={() => handleDelete(record)}
+        >
+          Xóa
+        </Button>
+      ),
+    },
+  ];
+
+  return isLoading ? (
+    <p>...Loading</p>
+  ) : (
     <DashboardLayout>
       <DashboardNavbar />
+      <CustomeDeleteModal
+        isOpen={isOpen}
+        onClose={handleClosePopup}
+        deleteInfo={deleteInfo}
+        reloadData={reloadData}
+      />
       <MDBox pt={6} pb={3}>
         <Grid container spacing={6}>
           <Grid item xs={12}>
@@ -60,84 +175,22 @@ function Tables() {
               >
                 <MDTypography variant="h6" color="white">
                   <Box>
-                    <Box>
-                      Bảng quản lý phim
-                      <Breadcrumbs></Breadcrumbs>
-                    </Box>
-
-                    <Box display="flex" gap={2} justifyContent="space-evenly" flexWrap="wrap">
-                      <Button
-                        variant="contained"
-                        color="success"
-                        startIcon={<AddIcon />}
-                        sx={{
-                          background: "green",
-                          color: "#FFFFFF",
-                          "&:hover": {
-                            color: "green",
-                          },
-                        }}
-                        onClick={() => handleOpen("modal1")}
-                      >
-                        Khởi tạo phim
-                      </Button>
-
-                      <Button
-                        variant="contained"
-                        color="error"
-                        sx={{
-                          background: "#FF0000",
-                          color: "#FFFFFF",
-                          "&:hover": {
-                            color: "#FF0000",
-                          },
-                        }}
-                        startIcon={<DeleteIcon />}
-                        onClick={() => handleOpen("modal2")}
-                      >
-                        Xóa toàn bộ phim
-                      </Button>
-                      <Button
-                        variant="contained"
-                        color="info"
-                        startIcon={<ArrowUpwardIcon />}
-                        sx={{
-                          background: "#FF9900",
-                          color: "#FFFFFF",
-                          "&:hover": {
-                            color: "#FF9900",
-                          },
-                        }}
-                      >
-                        Tải lên
-                      </Button>
-                    </Box>
+                    <Box>Bảng quản lý phim</Box>
                   </Box>
                 </MDTypography>
               </MDBox>
-
-              {/* Dữ liệu của bảng + tiêu đề */}
-              <MDBox pt={3}>
-                <DataTable
-                  table={{ columns, rows }}
-                  isSorted={false}
-                  entriesPerPage={false}
-                  showTotalEntries={false}
-                  noEndBorder
+              <>
+                <Table
+                  columns={columns}
+                  dataSource={data}
+                  bordered
+                  pagination={{ pageSize: 5 }}
+                  style={{
+                    marginTop: "1rem",
+                    padding: "10px 10px",
+                  }}
                 />
-              </MDBox>
-
-              {/* Các nút click */}
-              {/* nút tạo folder*/}
-              <CustomModal
-                open={modalState.modal1}
-                onClose={() => handleClose("modal1", false)}
-              ></CustomModal>
-              {/* nút xóa folder  */}
-              <CustomConfirm
-                open={modalState.modal2}
-                onClose={() => handleClose("modal2", false)}
-              ></CustomConfirm>
+              </>
             </Card>
           </Grid>
         </Grid>

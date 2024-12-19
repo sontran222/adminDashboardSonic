@@ -2,6 +2,9 @@
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
 import { useState } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
@@ -10,57 +13,142 @@ import MDTypography from "components/MDTypography";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 
-import DataTable from "examples/Tables/DataTable";
+// mui
+import { Box, Button } from "@mui/material";
 
-// Data
-import authorsTableData from "layouts/AddFilms/data/authorsTableData";
-import Breadcrumbs from "ultis/Breadcrumbs";
-import { Box, Button, Paper, TextField } from "@mui/material";
-//Icon
-import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
-import DeleteIcon from "@mui/icons-material/Delete";
-import AddIcon from "@mui/icons-material/Add";
+//antd
+import { DatePicker, Dropdown, Input, message, Select } from "antd";
+import TextArea from "antd/es/input/TextArea";
 
 //ultis
-import CustomModal from "ultis/CustomModal";
-import CustomConfirm from "ultis/CustomConfirm";
-import { Margin, WidthFull } from "@mui/icons-material";
-import Select from "ultis/Select";
 import AutoCompleteCountries from "ultis/AutoComplete";
 import UploadImage from "ultis/UploadImage";
-//antd
-import { DatePicker, Dropdown, Input, Space } from "antd";
-import TextArea from "antd/es/input/TextArea";
-import { DownOutlined } from "@ant-design/icons";
+import Alert from "ultis/Alert";
 
 function Tables() {
-  const { columns, rows } = authorsTableData();
-  const [modalState, setModalState] = useState({
-    modal1: false,
-    modal2: false,
-    modal3: false,
+  const navigate = useNavigate();
+
+  const [formData, setFormData] = useState({
+    name: "",
+    originName: "",
+    year: 1999,
+    chieurap: false,
+    content: "",
+    Thumb: "",
+    Poster: "",
+    genreSlug: "phim-le",
+    countryName: null,
   });
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
 
-  const onChangeYearPicker = (YearString) => {
-    console.log(YearString);
+  const handleChangeFormData = (e) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
   };
 
-  const items = [
-    {
-      label: "Không",
-      key: "false",
-    },
-    {
-      label: "Có",
-      key: "true",
-    },
-  ];
-  const onClickSelect = (value) => {
-    console.log(`selected ${value}`);
+  const onChangeYearPicker = (year) => {
+    setFormData({
+      ...formData,
+      year: year.$y,
+    });
   };
 
-  const SaveFilm = () => {
-    console.log("Save");
+  // Xử lý chọn phim chiếu rạp
+  const handleSelectChange = (value) => {
+    setFormData({
+      ...formData,
+      chieurap: value === "true", //1 kiểu so sánh để trả ra 1 hoặc 0 vì value: "true" là chuỗi "true"
+    });
+  };
+
+  const handleSelectGenre = (value) => {
+    setFormData({
+      ...formData,
+      genreSlug: value,
+    });
+  };
+
+  const handleChangeCountry = (name, value) => {
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+  };
+
+  // Xử lý thay đổi ảnh
+  const handleFileChange = (name, file) => {
+    setFormData({
+      ...formData,
+      [name]: file,
+    });
+  };
+
+  const SaveFilm = async () => {
+    const formDataFilm = new FormData();
+
+    formDataFilm.append("name", formData.name);
+    formDataFilm.append("originName", formData.originName);
+    formDataFilm.append("year", formData.year);
+    formDataFilm.append("chieurap", formData.chieurap);
+    formDataFilm.append("genreSlug", formData.genreSlug);
+    formDataFilm.append("Thumb", formData.Thumb);
+    formDataFilm.append("Poster", formData.Poster);
+
+    try {
+      //film
+      const responseFilm = await axios.post("http://localhost:8080/api/films", formDataFilm, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      console.log(responseFilm);
+
+      let slugFilm;
+      slugFilm = responseFilm.data.result.slug;
+
+      //phần descriptions
+      console.log("slugFilm: ", slugFilm);
+      const JsonDesciption = {
+        slug: slugFilm,
+        content: formData.content,
+      };
+
+      const responseDes = await axios.post(
+        "http://localhost:8080/api/descriptions",
+        JsonDesciption,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      console.log(responseDes.data);
+
+      //Phần country
+      const JsonCountry = {
+        slug: slugFilm,
+        countryName: formData.countryName,
+      };
+      console.log(JsonCountry);
+      const responseCountry = await axios.post("http://localhost:8080/api/countries", JsonCountry, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      console.log(responseCountry.data);
+      setSuccess("Cập nhật phim thành công");
+      navigate(`/quan-ly-phim/chi-tiet/${slugFilm}`, {
+        state: { slug: slugFilm, show: true },
+      });
+    } catch (error) {
+      console.log("Có lỗi xảy ra: ", error.response ? error.response.data : error.message);
+      setError(error.response ? error.response.data.message : error.message);
+    }
   };
 
   return (
@@ -90,34 +178,59 @@ function Tables() {
 
               {/* Phần nhập nội dung */}
               <MDBox pt={3} px={2}>
+                {error && <Alert show={true} type={"error"} message={error} />}
+                {success && <Alert show={true} type={"success"} message={success} />}
+
                 <Grid container spacing={2}>
                   <Grid item xs={7}>
                     <Box>
                       <span style={{ color: "black", fontSize: "1rem", fontWeight: "700" }}>
                         Tên phim:
                       </span>
-                      <Input placeholder="Ví dụ: Đặc vụ 007" />
+                      <Input
+                        placeholder="Ví dụ: Đặc vụ 007"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChangeFormData}
+                      />
                     </Box>
 
                     <Box>
                       <span style={{ color: "black", fontSize: "1rem", fontWeight: "700" }}>
                         Tên ban đầu:
                       </span>
-                      <Input placeholder="Ví dụ: Spyder 007" />
+                      <Input
+                        placeholder="Ví dụ: Spyder 007"
+                        name="originName"
+                        value={formData.originName}
+                        onChange={handleChangeFormData}
+                      />
                     </Box>
 
                     <Box>
                       <span style={{ color: "black", fontSize: "1rem", fontWeight: "700" }}>
                         Mô tả phim:
                       </span>
-                      <TextArea rows={4} />
+                      <TextArea
+                        rows={4}
+                        name="content"
+                        placeholder="Mô tả ngắn về phim"
+                        value={formData.content}
+                        onChange={handleChangeFormData}
+                      />
                     </Box>
-
-                    <Box>
-                      <span style={{ color: "black", fontSize: "1rem", fontWeight: "700" }}>
-                        Ảnh ngang
+                    <Box sx={{ mt: 3 }}>
+                      <span
+                        style={{
+                          color: "black",
+                          fontSize: "1rem",
+                          fontWeight: "700",
+                          marginRight: 10,
+                        }}
+                      >
+                        Ảnh ngang:
                       </span>
-                      <UploadImage></UploadImage>
+                      <UploadImage name="Thumb" onFileChange={handleFileChange}></UploadImage>
                     </Box>
                   </Grid>
 
@@ -138,19 +251,13 @@ function Tables() {
                         Phim chiếu rạp:
                       </span>
                       <Select
-                        defaultValue="false"
-                        onChange={onClickSelect}
-                        options={[
-                          {
-                            value: "true",
-                            label: "Có",
-                          },
-                          {
-                            value: "false",
-                            label: "Không",
-                          },
-                        ]}
-                      ></Select>
+                        value={formData.chieurap ? "true" : "false"}
+                        style={{ width: "100%" }}
+                        onChange={handleSelectChange}
+                      >
+                        <Select.Option value="true">Có</Select.Option>
+                        <Select.Option value="false">Không</Select.Option>
+                      </Select>
                     </Box>
 
                     <Box>
@@ -159,7 +266,8 @@ function Tables() {
                       </span>
                       <Select
                         defaultValue="phim-le"
-                        onChange={onClickSelect}
+                        onChange={handleSelectGenre}
+                        style={{ width: "100%" }}
                         options={[
                           {
                             value: "phim-le",
@@ -185,7 +293,23 @@ function Tables() {
                       <span style={{ color: "black", fontSize: "1rem", fontWeight: "700" }}>
                         Quốc gia
                       </span>
-                      <AutoCompleteCountries />
+                      <AutoCompleteCountries
+                        name="countryName"
+                        OnChangeCountry={handleChangeCountry}
+                      />
+                    </Box>
+                    <Box sx={{ mt: 3 }}>
+                      <span
+                        style={{
+                          color: "black",
+                          fontSize: "1rem",
+                          fontWeight: "700",
+                          marginRight: 10,
+                        }}
+                      >
+                        Ảnh dọc:
+                      </span>
+                      <UploadImage name="Poster" onFileChange={handleFileChange}></UploadImage>
                     </Box>
                   </Grid>
                 </Grid>

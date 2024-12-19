@@ -40,6 +40,7 @@ export default function data() {
     return documentExtensions.includes(extension.toLowerCase());
   };
 
+  //Lấy đuôi đường dẫn để sử dụng icon
   const FolderName = ({ name }) => {
     const parts = getFilePath(name);
     return (
@@ -94,11 +95,24 @@ export default function data() {
     >
       <Button
         sx={{
+          color: "#000000",
+          background: "#FFFFFF",
+          border: "1px solid black",
+          "&:hover": {
+            color: "#FFFFFF",
+            background: "#000000",
+          },
+        }}
+        color="error"
+      >
+        Chi tiết
+      </Button>
+      <Button
+        sx={{
           color: "#FFFFFF",
           background: "#FF0000",
           "&:hover": {
             color: "#FF0000",
-            border: "1px solid #FF0000",
           },
         }}
         color="error"
